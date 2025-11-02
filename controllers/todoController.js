@@ -7,12 +7,14 @@ const {
 
 const handleAllList = async (req, res) => {
   const { userId } = req;
-  const { status } = req.query;
+  const { limit, page } = req.query;
+  const offset = page && limit ? (page - 1) * limit : null;
+
   if (!userId) {
     return res.status(500).json({ error: "Failed to fetch data" });
   }
   try {
-    const data = await getAllTodoList(userId);
+    const data = await getAllTodoList(userId, limit, offset);
     return res.status(200).json({ todoList: data });
   } catch (err) {
     console.log("Error fetching todo list:", err);

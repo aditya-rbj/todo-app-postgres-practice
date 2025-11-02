@@ -15,11 +15,31 @@ const addUser = async (name, email, password) => {
   return user.rows[0];
 };
 
-const getAllTodoList = async (userId) => {
-  const data = await pool.query("select * from todos where user_id = $1", [
-    userId,
-  ]);
-  return data.rows;
+const getAllTodoList = async (userId, limit, offset) => {
+  let baseQuery = "select * from todos where user_id = $1";
+  const params = [userId];
+
+  if (limit && offset) {
+    params.push(limit);
+    params.push(offset);
+    baseQuery += ` order by id asc limit $${params.length - 1} offset $${
+      params.length
+    }`;
+  }
+
+  const data = await pool.query(baseQuery, params);
+
+  const count = await pool.query(
+    "select count(*) from todos where user_id = $1",
+    [userId]
+  );
+
+  const hasNext =
+    limit && offset
+      ? parseInt(offset) + parseInt(limit) < parseInt(count.rows[0].count)
+      : false;
+
+  return { todo: data.rows, total: count.rows?.[0]?.count, hasNext: !!hasNext };
 };
 
 const addTodoListData = async (userId, desc, status) => {
